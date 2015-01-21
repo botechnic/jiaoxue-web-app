@@ -2,3 +2,6 @@ bower_components
 
 # Eclipse project file
 .project
+
+#data
+data
