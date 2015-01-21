@@ -159,22 +159,36 @@ function resize_left_panel() {
 
 	var canvas = document.getElementById('the-canvas');
 
-	if (whiteboard_container.clientHeight / whiteboard_container.clientWidth <= 0.75) {
+	var bili = pdf_w > pdf_h ? pdf_h/pdf_w : pdf_w/pdf_h;
+	
+	if(whiteboard_container.clientHeight < whiteboard_container.clientWidth) {
 		canvas.style.height = (whiteboard_container.clientHeight - 20) + 'px';
-		canvas.style.width = (whiteboard_container.clientHeight / 0.75 - 20)
-				+ 'px';
+		canvas.style.width = (whiteboard_container.clientHeight- 20) / bili	+ 'px';
 		canvas.style.top = (whiteboard_container.clientHeight / 2 - 10 - canvas.clientHeight / 2)
 				+ 'px';
-
 	} else {
 		canvas.style.width = (whiteboard_container.clientWidth - 20) + 'px';
-		canvas.style.height = (whiteboard_container.clientWidth * 0.75 - 20)
-				+ "px";
+		canvas.style.height = (whiteboard_container.clientWidth- 20) * bili + "px";
 		canvas.style.top = (whiteboard_container.clientHeight / 2 - 10 - canvas.clientHeight / 2)
 				+ 'px';
 	}
+	
+//	if (whiteboard_container.clientHeight / whiteboard_container.clientWidth <= 0.75) {
+//		canvas.style.height = (whiteboard_container.clientHeight - 20) + 'px';
+//		canvas.style.width = (whiteboard_container.clientHeight / 0.75 - 20)
+//				+ 'px';
+//		canvas.style.top = (whiteboard_container.clientHeight / 2 - 10 - canvas.clientHeight / 2)
+//				+ 'px';
+//
+//	} else {
+//		canvas.style.width = (whiteboard_container.clientWidth - 20) + 'px';
+//		canvas.style.height = (whiteboard_container.clientWidth * 0.75 - 20)
+//				+ "px";
+//		canvas.style.top = (whiteboard_container.clientHeight / 2 - 10 - canvas.clientHeight / 2)
+//				+ 'px';
+//	}
 
-	mouse_factor = pdf_h / canvas.clientHeight;
+	mouse_factor = pdf_w / canvas.clientWidth;
 
 	if (global_info.biz_type === 'playback') {
 		resize_left_panel_playback();
