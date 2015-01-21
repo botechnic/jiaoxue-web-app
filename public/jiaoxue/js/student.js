@@ -786,8 +786,8 @@ var is_start_playback = false;
 document.getElementById("video1").addEventListener(
 		"canplay",
 		function() {
-			document.getElementById("range").innerHTML = get_time_str(document
-					.getElementById("video1").duration);
+			document.getElementById("range").innerHTML = get_time_str(Math.round(document
+					.getElementById("video1").duration));
 
 			// var volume = document.getElementById('video1').volume;
 			document.getElementById('video1').volume = playback_volume;
