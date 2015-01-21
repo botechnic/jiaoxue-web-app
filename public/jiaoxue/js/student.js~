@@ -1,0 +1,820 @@
+var pdf_url = global_info.pdf_addr;
+var pdfDoc = null,
+    pageNum = 1,
+    pageRendering = false,
+    pageNumPending = null,
+    scale = 2,
+    canvas = document.getElementById('the-canvas'),
+    ctx = canvas.getContext('2d');
+    
+    var pdf_h = 0;
+    var pdf_w = 0;
+    var mouse_factor = 1;
+
+///////////////////////////////////////////////////////////////////////////////
+// ui part
+// 
+if(global_info.biz_type === 'live') {
+	//TODO:
+    //$("#live_controller").show();
+	$("#play_pause").hide();
+	$("#seek_bar").hide();
+	$("#curr_pos").hide();
+	$("#video_xiegang").hide();
+	$("#range").hide();
+	$("#video1").hide();
+	$("#start_stop_record").hide();
+	var media_container = document.getElementById('media_container');
+	media_container.style.paddingTop = '10px';
+	media_container.style.height = (media_container.clientHeight - 20) + 'px';
+} else if(global_info.biz_type === 'playback') {
+	//TODO:
+    $("#player").hide();
+    $("#start_stop_record").hide();
+} else if (global_info.biz_type === 'record') {
+    $("#play_pause").hide();
+    $("#seek_bar").hide();
+    $("#curr_pos").hide();
+    $("#video_xiegang").hide();
+    $("#range").hide();
+    $("#player").hide();
+    $("#video1").hide();
+    var media_container = document.getElementById('media_container');
+    media_container.style.paddingTop = '10px';
+    media_container.style.height = (media_container.clientHeight - 20) + 'px';
+
+ /**
+ * rtmp
+ */
+    var user_access_mic = false;
+
+    function testerror(ok) {
+        console.log('err', ok);
+        //return "kolya";
+        
+        if (ok === 'user_denied_mic' || ok === 'user_access_mic') {
+            user_access_mic = true;
+            var live_publish = document.getElementById('live_publish');
+            live_publish.style.position = 'inherit';
+            live_publish.style.width = '1px';
+            live_publish.style.height = '1px';
+            live_publish.style.top = '0px';
+            live_publish.style.left = '0px';
+
+            var rtmpLiveEncoder = document.getElementById('RtmpLiveEncoder');
+            rtmpLiveEncoder.style.width = '1px';
+            rtmpLiveEncoder.style.height = '1px';
+        }
+        
+        if (ok === 'user_denied_mic') {
+            //alert('please open your mic!');
+            alert('请打开MIC！');
+        }
+
+	onresize();
+    }
+
+    var flashvars = {
+        streamer: global_info.publish_addr,
+        file: "" + global_info.course_id,
+        onStopRecord: 'stopRecord',
+        onError: 'testerror',
+        publishType: 'live',
+        labelRecord: 'start',
+        labelStop: 'stop'
+    };
+    var params = {
+        menu: "false",
+        scale: "noScale",
+        allowFullscreen: "true",
+        allowScriptAccess: "always",
+        bgcolor: "black",
+        wmode: "direct" // can cause issues with FP settings & webcam
+    };
+    var attributes = {
+        id: "RtmpLiveEncoder"
+    };
+    swfobject.embedSWF(
+        "./asset/RtmpLiveEncoder.swf",
+        "altContent", "215", "138", "11.0.0",
+        "./asset/expressInstall.swf",
+        flashvars, params, attributes);
+    
+
+}
+
+if(document.webkitIsFullScreen === undefined) {
+    var full_screen = document.getElementById('full_screen');
+    full_screen.style.display = 'none';
+}
+
+document.getElementById('teacher_name').textContent = global_info.teacher_name;
+
+
+function resize_splitter() {
+	var splitter = document.getElementById('splitter');
+	var splitter_btn = document.getElementById('splitter_btn');
+	
+	splitter.style.height = window.innerHeight + "px";
+	splitter_btn.style.top = (splitter.clientHeight/2 - splitter_btn.clientHeight/2) + 'px';
+}
+
+function resize_right_panel() {
+	var right_panel = document.getElementById('right_panel');
+	var banner = document.getElementById('banner');
+	var history_msg = document.getElementById('historyMsg');
+	var controls = document.getElementById('controls');
+
+	history_msg.style.height = (right_panel.clientHeight - banner.clientHeight - controls.clientHeight - 5 - 20 - 20) + 'px';
+}
+
+function resize_left_panel() {
+    var left_panel = document.getElementById('left_panel');
+    var info_container = document.getElementById('info_container');
+    var whiteboard_container = document.getElementById('whiteboard_container');
+    var media_container = document.getElementById('media_container');
+    
+    whiteboard_container.style.height = (window.innerHeight - 20 - 20 - info_container.clientHeight - media_container.clientHeight) + 'px';
+    
+    var canvas = document.getElementById('the-canvas');
+
+	if(whiteboard_container.clientHeight/whiteboard_container.clientWidth <= 0.75) {
+		canvas.style.height = (whiteboard_container.clientHeight - 20)+'px';
+		canvas.style.width = (whiteboard_container.clientHeight/0.75-20)+'px';
+		canvas.style.top = (whiteboard_container.clientHeight/2 - 10 - canvas.clientHeight/2)+'px';
+	
+	} else {
+		canvas.style.width = (whiteboard_container.clientWidth-20)+'px';
+		canvas.style.height = (whiteboard_container.clientWidth*0.75-20)+"px";
+		canvas.style.top = (whiteboard_container.clientHeight/2 - 10 - canvas.clientHeight/2)+'px';
+	}
+	
+	mouse_factor = pdf_h / canvas.clientHeight ;
+}
+
+function resize_panel() {
+	var win_w = window.innerWidth;
+	var win_h = window.innerHeight;
+	var left_panel = document.getElementById('left_panel');
+	var right_panel = document.getElementById('right_panel');
+
+	left_panel.style.height = win_h-20 + 'px';
+	right_panel.style.height = win_h-20 + 'px';
+	
+	left_panel.style.width = (win_w - 10 - 10 - 10 -  right_panel.clientWidth) + 'px';
+}
+
+function resize_panel_fullscreen() {
+	var win_w = window.innerWidth;
+	var win_h = window.innerHeight;
+	var left_panel = document.getElementById('left_panel');
+	var right_panel = document.getElementById('right_panel');
+
+	left_panel.style.height = win_h-20 + 'px';	
+	left_panel.style.width = (win_w - 10) + 'px';
+}
+
+function resize_live_publish() {
+    var live_publish = document.getElementById('live_publish');
+    live_publish.style.left = (window.innerWidth / 2 - 215 / 2) + 'px';
+    live_publish.style.top = (window.innerHeight / 2 - 138 / 2) + 'px';
+}
+
+function onresize() {
+	console.log('onresize');
+	if(!document.webkitIsFullScreen) {
+		resize_panel();
+		resize_left_panel();
+		resize_right_panel();
+		resize_splitter();
+	} else {
+		resize_panel_fullscreen();
+		resize_left_panel();
+	}
+
+	if (!user_access_mic) {
+	    resize_live_publish();
+	}
+}
+
+window.addEventListener('resize', onresize, false); 
+
+window.onload = function() {
+	console.log('onload');
+	onresize();
+}
+
+
+function click_splitter_btn() {
+	var right_panel = document.getElementById('right_panel');
+	var left_panel = document.getElementById('left_panel');
+	var splitter_btn = document.getElementById('splitter_btn');
+
+	if(right_panel.style.display !== 'none') {
+		right_panel.style.display = 'none';
+
+		left_panel.style.width = (window.innerWidth-10-10) + 'px';
+		splitter_btn.src = 'img/splitter_btn_back.png';
+		
+	} else {
+		left_panel.style.width = (window.innerWidth-270-10-10-10) + 'px';
+		right_panel.style.display = 'block';	
+		splitter_btn.src = 'img/splitter_btn.png';		
+	}
+	
+	onresize();
+}
+
+document.getElementById('splitter_btn').addEventListener('click', click_splitter_btn);
+
+function click_full_screen() {
+	var left_panel = document.getElementById('left_panel');
+
+	if(!document.webkitIsFullScreen) {
+		left_panel.webkitRequestFullScreen(); 
+	} else {
+		document.webkitCancelFullScreen();
+	}
+}
+
+function cancel_full_screen() {
+	var left_panel = document.getElementById('left_panel');
+	var full_screen = document.getElementById('full_screen');
+
+	if(!document.webkitIsFullScreen) {
+		left_panel.style.float = 'left';
+		full_screen.src = 'img/fullscreen.png';
+	} else {
+		left_panel.style.float = 'none';	
+		full_screen.src = 'img/restore_screen.png';
+	}
+
+	onresize();
+}
+
+document.getElementById('left_panel').addEventListener('webkitfullscreenchange', cancel_full_screen, false);
+//document.getElementById('full_screen').addEventListener('click', click_full_screen);
+
+function testecho() {
+	var flash = document.getElementById('RtmpLiveEncoder');
+	flash.test_echo("testecho");
+}
+document.getElementById('full_screen').addEventListener('click', testecho);
+
+///////////////////////////////////////////////////////////////////////////////
+// pdf part
+// 
+
+
+
+function renderPage(num) {
+    pageRendering = true;
+
+    pdfDoc.getPage(num).then(function (page) {
+        var viewport = page.getViewport(scale);
+        pdf_w = viewport.width;
+        pdf_h = viewport.height;
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        
+        var renderContext = {
+            canvasContext: ctx,
+            viewport: viewport
+        };
+        var renderTask = page.render(renderContext);
+
+        renderTask.promise.then(function () {
+            pageRendering = false;
+            if (pageNumPending !== null) {
+                renderPage(pageNumPending);
+                pageNumPending = null;
+            }
+            ctx.strokeStyle = "red";
+            ctx.lineWidth = 3;
+
+        });
+    });
+
+    document.getElementById('page_num').textContent = pageNum;
+}
+
+function queueRenderPage(num) {
+    if (pageRendering) {
+        pageNumPending = num;
+    } else {
+        renderPage(num);
+    }
+}
+
+function onPrevPage() {
+    if (pageNum <= 1) {
+        return;
+    }
+    pageNum--;
+    queueRenderPage(pageNum);
+    if (global_info.role === 'teacher'){
+        socket.emit('prev', { pageNum: pageNum });
+    }
+}
+
+function onNextPage() {
+    if (pageNum >= pdfDoc.numPages) {
+        return;
+    }
+    pageNum++;
+    queueRenderPage(pageNum);
+    if (global_info.role === 'teacher') {
+        socket.emit('next', { pageNum: pageNum });
+    }
+}
+
+/**
+ * Asynchronously downloads PDF.
+ */
+PDFJS.getDocument(pdf_url).then(function (pdfDoc_) {
+    pdfDoc = pdfDoc_;
+    document.getElementById('page_count').textContent = pdfDoc.numPages;
+    renderPage(pageNum);	
+
+	document.getElementById('prev').addEventListener('click', onPrevPage);
+	document.getElementById('next').addEventListener('click', onNextPage);
+
+});
+
+
+///////////////////////////////////////////////////////////////////////////////
+// login part
+// 
+var username;
+var connected = false;
+var pp = false;
+
+var socket = io.connect(global_info.socketio_addr);
+
+function set_user_name() {
+    if (username) {
+        if (global_info.role === 'teacher') {
+            socket.emit('add user', { role: 'teacher', username: username });
+        } else {
+            socket.emit('add user', { role: 'student', username: username });
+        }
+       
+    }
+}
+
+function add_user() {
+    var username_ = global_info.userid;
+    username = username_;
+    set_user_name();
+}
+
+socket.on('connect', function () {
+    console.log('connected');
+
+    add_user();
+
+    start_playlive();
+});
+
+socket.on('login', function (data) {
+    connected = true;
+});
+
+socket.on('new message', function (data) {
+    console.log('new message');
+	_displayNewMsg(data.username, data.message);
+
+});
+ 
+socket.on('prev', function (e) {
+    console.log('prev');
+    var pageNum = e.pageNum;
+    queueRenderPage(pageNum);
+});
+
+socket.on('next', function (e) {
+    console.log('next');
+    var pageNum = e.pageNum;
+    queueRenderPage(pageNum);
+});
+
+
+socket.on('mousedown', function (e) {
+    console.log('mousedown');
+    pp = true;
+    var mouseX = e.mouseX;
+    var mouseY = e.mouseY;
+    ctx.moveTo(mouseX, mouseY);
+
+});
+
+socket.on('mouseup', function (e) {
+    console.log('mouseup');
+    pp = e.pp;
+});
+
+socket.on('mousemove', function (e) {
+    console.log('mousemove');
+    var mouseX = e.mouseX;
+    var mouseY = e.mouseY;
+    pp = e.pp;
+    if (pp) {
+        ctx.lineTo(mouseX, mouseY);
+        ctx.stroke();
+    }
+});
+
+///////////////////////////////////////////////////////////////////////////////
+// chat part
+// 
+document.getElementById('messageInput').addEventListener('keyup', function(e) {
+    var messageInput = document.getElementById('messageInput'),
+        msg = messageInput.value,                
+		color = '#000000';
+    if (e.keyCode == 13 && msg.trim().length != 0) {
+        messageInput.value = '';
+		socket.emit('new message', msg);
+        _displayNewMsg(global_info.userid, msg);
+    };
+}, false);
+
+document.getElementById('clearBtn').addEventListener('click', function() {
+    document.getElementById('historyMsg').innerHTML = '';
+}, false);
+
+
+document.getElementById('emoji').addEventListener('click', function(e) {
+    var emojiwrapper = document.getElementById('emojiWrapper');
+	if(emojiwrapper.style.display === 'block') {
+		emojiwrapper.style.display = 'none';	
+	} else {
+        emojiwrapper.style.display = 'block';
+	}
+    e.stopPropagation();
+}, false);
+
+document.body.addEventListener('click', function(e) {
+    var emojiwrapper = document.getElementById('emojiWrapper');
+    if (e.target != emojiwrapper) {
+        emojiwrapper.style.display = 'none';
+    };
+});
+
+document.getElementById('emojiWrapper').addEventListener('click', function(e) {
+    var target = e.target;
+    if (target.nodeName.toLowerCase() == 'img') {
+        var messageInput = document.getElementById('messageInput');
+        messageInput.focus();
+        messageInput.value = messageInput.value + '[emoji:' + target.title + ']';
+    };
+}, false);
+
+
+function _initialEmoji() {
+    var emojiContainer = document.getElementById('emojiWrapper'),
+        docFragment = document.createDocumentFragment();
+    for (var i = 69; i > 0; i--) {
+        var emojiItem = document.createElement('img');
+        emojiItem.src = './content/emoji/' + i + '.gif';
+        emojiItem.title = i;
+        docFragment.appendChild(emojiItem);
+    };
+    emojiContainer.appendChild(docFragment);
+}
+
+function _displayNewMsg(user, msg, color) {
+    var container = document.getElementById('historyMsg'),
+        msgToDisplay = document.createElement('p'),
+        msg = _showEmoji(msg);
+    msgToDisplay.style.color = color || '#000';
+    msgToDisplay.innerHTML = user + ' : ' + msg;
+    container.appendChild(msgToDisplay);
+    container.scrollTop = container.scrollHeight;
+}
+
+function _showEmoji(msg) {
+    var match, result = msg,
+        reg = /\[emoji:\d+\]/g,
+        emojiIndex,
+        totalEmojiNum = document.getElementById('emojiWrapper').children.length;
+    while (match = reg.exec(msg)) {
+        emojiIndex = match[0].slice(7, -1);
+        if (emojiIndex > totalEmojiNum) {
+            result = result.replace(match[0], '[X]');
+        } else {
+            result = result.replace(match[0], '<img class="emoji" src="./content/emoji/' + emojiIndex + '.gif" />');
+        };
+    };
+    return result;
+}
+    
+_initialEmoji();
+	
+///////////////////////////////////////////////////////////////////////////////
+// live part
+// 
+function play_live() {
+	url = global_info.live_addr + '/' + global_info.course_id;
+	console.log('play', url);
+
+	$("#div_container").remove();
+
+	var div_container = $("<div/>");
+	$(div_container).attr("id", "div_container");
+	$("#player").append(div_container);
+
+	var player = $("<div/>");
+	$(player).attr("id", "player_id");
+	$(div_container).append(player);
+
+	srs_player = new SrsPlayer("player_id", 1, 1);
+	srs_player.on_player_ready = function () {
+	    this.play(url);
+	};
+	
+	srs_player.start();
+}
+
+function stop_live() {
+	if (srs_player) {
+	    srs_player.stop();
+	    srs_player = null;
+	}
+}
+
+function start_playlive() {
+    var course_id = global_info.course_id;
+
+    play_live();
+
+    socket.emit('start_playlive', { course_id: course_id });
+}
+
+function stop_playlive() {
+    var course_id = global_info.course_id;
+
+    stop_live();
+
+    socket.emit('stop_playlive', { course_id: course_id });
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+// playback part
+// 
+function padding(number, length, prefix) {
+    if (String(number).length >= length) {
+        return String(number);
+    }
+    return padding(prefix + number, length, prefix);
+}
+
+function get_time_str(time) {
+    var time_str = "";
+    // day
+    //time_str = padding(parseInt(time / 24 / 3600), 2, '0') + " ";
+    // hour
+    time = time % (24 * 3600);
+    time_str += padding(parseInt(time / 3600), 2, '0') + ":";
+    // minute
+    time = time % (3600);
+    time_str += padding(parseInt(time / 60), 2, '0') + ":";
+    // seconds
+    time = time % (60);
+    time_str += padding(parseInt(time), 2, '0');
+    return time_str;
+}
+
+
+var is_pause = true;
+var interval_handler = null;
+
+var interval_function = function () {
+    var current_time = document.getElementById("video1").currentTime;
+    //document.getElementById("curr_pos").innerHTML = Number(current_time).toFixed(1);
+    document.getElementById("curr_pos").innerHTML = get_time_str(current_time);
+    document.getElementById("seek_bar").value = current_time * 1000;
+
+    if (document.getElementById("video1").ended) {
+        clearInterval(interval_handler);
+        interval_handler = null;
+        console.log('ended');
+        document.getElementById("seek_bar").disabled = true;
+
+		document.getElementById("seek_bar").value = 0;
+		document.getElementById('play_pause').src = 'img/play.png';
+    }
+}
+
+function start_playback() {
+    var course_id = global_info.course_id;
+    socket.emit('start_playback', { course_id: course_id });
+    is_pause = false;
+    pageNum = 1;
+    queueRenderPage(pageNum);
+
+    document.getElementById("seek_bar").value = 0;
+    document.getElementById("seek_bar").max = 0;
+
+    var pos = 0;
+    socket.emit('seek_playback', { pos: pos });
+    document.getElementById("curr_pos").innerHTML = get_time_str(pos);
+    document.getElementById("video1").src = global_info.playback_addr;
+    document.getElementById("video1").pause();
+    document.getElementById("video1").play();
+    document.getElementById("seek_bar").disabled = false;
+    interval_handler = setInterval(interval_function, 1000);
+}
+
+function stop_playback() {
+    var course_id = global_info.course_id;
+    socket.emit('stop_playback', { course_id: course_id });
+    is_pause = false;
+    pageNum = 1;
+    queueRenderPage(pageNum);
+
+    clearInterval(interval_handler);
+    interval_handler = null;
+
+    document.getElementById("range").innerHTML = '00:00:00';
+    document.getElementById("curr_pos").innerHTML = '00:00:00';
+    document.getElementById("seek_bar").value = 0;
+    document.getElementById("video1").pause();
+    document.getElementById("video1").src = '';
+    document.getElementById("seek_bar").disabled = true;
+}
+
+
+
+function play_pause() {
+	var course_id = global_info.course_id;
+	var play_pause = document.getElementById('play_pause');
+
+	if(!is_pause){
+		play_pause.src = 'img/play.png';
+		is_pause = true;
+        socket.emit('pause_resume_playback', { is_pause: is_pause });
+		document.getElementById("video1").pause();
+	}else{
+		
+		play_pause.src = 'img/pause.png';
+  		is_pause = false;
+		
+	    var seek_bar_value = document.getElementById("seek_bar").value;
+
+		if(seek_bar_value === '0'){
+		    socket.emit('start_playback', { course_id: course_id });
+			pageNum = 1;
+			queueRenderPage(pageNum);
+
+			document.getElementById("seek_bar").value = 0;
+			document.getElementById("seek_bar").max = 0;
+
+			var pos = 0;
+			socket.emit('seek_playback', { pos: pos });
+			document.getElementById("curr_pos").innerHTML = get_time_str(pos);
+			document.getElementById("video1").src = global_info.playback_addr;
+			document.getElementById("video1").pause();
+			document.getElementById("video1").play();
+			document.getElementById("seek_bar").disabled = false;
+			interval_handler = setInterval(interval_function, 1000);
+		}else{
+			socket.emit('pause_resume_playback', { is_pause: is_pause });
+			document.getElementById("video1").play();
+		}
+	}
+}
+
+function send_seek(e) {
+    var pos = e.target.value;
+    console.log('pos', pos);
+    socket.emit('seek_playback', { pos: pos });
+    document.getElementById("curr_pos").innerHTML = get_time_str(Number(pos/1000));
+    document.getElementById("video1").currentTime = pos / 1000;
+}
+
+function pause_resume_playback() {
+    is_pause = !is_pause;
+    socket.emit('pause_resume_playback', { is_pause: is_pause });
+
+    if (is_pause) {
+        document.getElementById("video1").pause();
+    } else {
+        document.getElementById("video1").play();
+    }
+}
+
+document.getElementById("seek_bar").disabled = true;
+
+document.getElementById("video1").addEventListener("canplay", function () {
+    //document.getElementById("range").innerHTML = document.getElementById("video1").duration;
+    document.getElementById("range").innerHTML = get_time_str(document.getElementById("video1").duration);
+	document.getElementById("seek_bar").max = document.getElementById("video1").duration * 1000;
+});
+document.getElementById('play_pause').addEventListener('click',play_pause);
+//document.getElementById('start_playback').addEventListener('click', start_playback);
+//document.getElementById('pause_resume_playback').addEventListener('click', pause_resume_playback);
+//document.getElementById('stop_playback').addEventListener('click', stop_playback);
+document.getElementById('seek_bar').addEventListener('change', send_seek);
+
+
+///////////////////////////////////////////////////////////////////////////////
+// record part
+// 
+
+var is_record = false;
+
+function start_record() {
+    pageNum = 1;
+    //renderPage(pageNum);
+    console.log('start_record');
+    //var course_id = parseInt(document.getElementById('course_id').value);
+    var course_id = global_info.course_id;
+    socket.emit('start_record', { record: true, course_id: course_id });
+    socket.emit('next', { pageNum: pageNum });
+}
+
+function stop_record() {
+    console.log('stop_record');
+
+    if (socket) {
+        socket.emit('stop_record', { record: false });
+    }
+}
+
+function start_stop_record() {
+    var start_stop_record = document.getElementById('start_stop_record');
+  
+    if (!is_record) {
+        start_stop_record.src = 'img/stop_record.png';
+        is_record = true;
+        pageNum = 1;
+        console.log('start_record');
+        var course_id = global_info.course_id;
+        socket.emit('start_record', { record: true, course_id: course_id });
+        socket.emit('next', { pageNum: pageNum });
+    } else {
+        start_stop_record.src = 'img/start_record.png';
+        is_record = false;
+        console.log('stop_record');
+        if (socket) {
+            socket.emit('stop_record', { record: false });
+        }
+    }
+}
+
+document.getElementById('start_stop_record').addEventListener('click', start_stop_record);
+
+var pp = false;
+
+var interval_handler = null;
+var mousemove_capture_flag = true;
+var interval_function1 = function () {
+    mousemove_capture_flag = true;
+};
+
+canvas.addEventListener('mousedown', function (e) {
+    if (global_info.role === 'teacher') {
+        var mouseX = e.pageX - this.offsetLeft;
+        var mouseY = e.pageY - this.offsetTop;
+        mouseX = mouseX * mouse_factor;
+        mouseY = mouseY * mouse_factor;
+        
+        pp = true;
+        ctx.moveTo(mouseX, mouseY);
+        socket.emit('mousedown', { mouseX: mouseX, mouseY: mouseY });
+
+        e.preventDefault();
+        // start interval
+        interval_handler = setInterval(interval_function1, 40);
+    }
+
+});
+
+canvas.addEventListener('mouseup', function (e) {
+    if (global_info.role === 'teacher') {
+        pp = false;
+        socket.emit('mouseup', { pp: false });
+
+        clearInterval(interval_handler);
+        interval_handler = null;
+    }
+});
+
+
+canvas.addEventListener('mousemove', function (e) {
+    if (global_info.role === 'teacher') {
+        var mouseX = e.pageX - this.offsetLeft;
+        var mouseY = e.pageY - this.offsetTop;
+        mouseX = mouseX * mouse_factor;
+        mouseY = mouseY * mouse_factor;
+        if (pp == true && mousemove_capture_flag == true) {
+            ctx.lineTo(mouseX, mouseY);
+            socket.emit('mousemove', { mouseX: mouseX, mouseY: mouseY, pp: pp });
+            ctx.stroke();
+
+            mousemove_capture_flag = false;
+        }
+    }
+
+});
