@@ -738,6 +738,7 @@ var interval_function = function() {
 		seek_bar_2.style.display = 'block';
 		document.getElementById('play_pause').src = 'img/play.png';
 
+		is_pause = true;
 		is_start_playback = false;
 	}
 }
