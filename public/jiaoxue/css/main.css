@@ -1,8 +1,10 @@
 html, body {
     font-family: sans-serif;	
 	font-size: 12px;
-	background-color: rgb(237,237,237);
+	/*background-color: rgb(237,237,237);*/
+	background-color: rgb(0,0,0);
 	overflow: hidden;
+	color: rgb(42,210,168);
 }
 
 #left_panel {
@@ -15,7 +17,8 @@ html, body {
 
 #info_container {
 	height: 50px;
-	background-color: rgb(249,249,249);
+	/*background-color: rgb(249,249,249);*/
+	background-color: rgb(0,0,0);
 }
 
 #mingjing_logo {
@@ -37,7 +40,8 @@ html, body {
 
 /* 媒体控制部分 */
 #media_container {
-	background-color: rgb(249,249,249);
+	/*background-color: rgb(249,249,249);*/
+	background-color: rgb(0,0,0);
 	height: 50px;
 	text-align: center;
 }
@@ -49,7 +53,7 @@ html, body {
 
 #seek_bar {
     position: relative;
-    color: #000;
+    /*color: #000;*/
     border:none;
 }
 
@@ -81,7 +85,7 @@ html, body {
 
 #volume_bar {
     position: relative;
-    color: #000;
+    /*color: #000;*/
     border:none;
     float: right;
     right:140px;
@@ -141,7 +145,8 @@ html, body {
 }
 
 #splitter {
-	background-color: rgb(237,237,237);
+	/*background-color: rgb(237,237,237);*/
+	background-color: rgb(0,0,0);
 	float: left;
 	width: 10px;
 	height: 671px;
