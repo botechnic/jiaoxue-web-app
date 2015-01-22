@@ -161,7 +161,7 @@ function resize_left_panel() {
 
 	var bili = pdf_w > pdf_h ? pdf_h/pdf_w : pdf_w/pdf_h;
 	
-	if(whiteboard_container.clientHeight < whiteboard_container.clientWidth) {
+	if(whiteboard_container.clientHeight / whiteboard_container.clientWidth <= bili) {
 		canvas.style.height = (whiteboard_container.clientHeight - 20) + 'px';
 		canvas.style.width = (whiteboard_container.clientHeight- 20) / bili	+ 'px';
 		canvas.style.top = (whiteboard_container.clientHeight / 2 - 10 - canvas.clientHeight / 2)
