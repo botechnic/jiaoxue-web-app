@@ -10,6 +10,6 @@ $ cd jiaoxue-web-app
 $ node app.js
 ```
 
-And point your browser to `http://localhost:8989/jiaoxue/teacher.html` for teacher. 
-And point your browser to `http://localhost:8989/jiaoxue/live.html` for student live. 
-And point your browser to `http://localhost:8989/jiaoxue/playback.html` for student playback. 
+* And point your browser to `http://localhost:8989/jiaoxue/teacher.html` for teacher. 
+* And point your browser to `http://localhost:8989/jiaoxue/live.html` for student live. 
+* And point your browser to `http://localhost:8989/jiaoxue/playback.html` for student playback. 
