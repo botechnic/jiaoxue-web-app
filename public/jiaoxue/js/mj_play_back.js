@@ -3,12 +3,11 @@
 // 
 
 var MJ = MJ || {};
-MJ.playback = MJ.playback || function(){
-	this.is_pause = true;
-	this.is_start_playback = false;
-};
+MJ.playback = MJ.playback || function(){};
 
-MJ.playback.prototype.interval_function = function () {
+var is_pause = true;
+var is_start_playback = false;
+var interval_function = function () {
 	var current_time = Number(document.getElementById("video1").currentTime)
 			.toFixed(1);
 	var duration = Number(document.getElementById("video1").duration)
@@ -27,8 +26,8 @@ MJ.playback.prototype.interval_function = function () {
 		seek_bar_2.style.display = 'block';
 		document.getElementById('play_pause').src = 'img/play.png';
 
-		this.is_pause = true;
-		this.is_start_playback = false;
+		is_pause = true;
+		is_start_playback = false;
 	}
 }
 
@@ -36,17 +35,17 @@ MJ.playback.prototype.play_pause = function () {
 	var course_id = global_info.course_id;
 	var play_pause = document.getElementById('play_pause');
 
-	if (!this.is_pause) {
+	if (!is_pause) {
 		play_pause.src = 'img/play.png';
-		this.is_pause = true;
+		is_pause = true;
 		socket.emit('pause_resume_playback', {
-			is_pause : this.is_pause
+			is_pause : is_pause
 		});
 		document.getElementById("video1").pause();
 	} else {
 
 		play_pause.src = 'img/pause.png';
-		this.is_pause = false;
+		is_pause = false;
 
 		var seek_bar_ele = document.getElementById("seek_bar_2");
 		var seek_bar_value = seek_bar_ele.style.left;
@@ -62,10 +61,10 @@ MJ.playback.prototype.play_pause = function () {
 			document.getElementById("video1").src = global_info.playback_addr;
 			document.getElementById("video1").pause();
 			document.getElementById("video1").play();
-			interval_handler = setInterval(this.interval_function, 1000);
+			interval_handler = setInterval(interval_function, 1000);
 		} else {
 			socket.emit('pause_resume_playback', {
-				is_pause : this.is_pause
+				is_pause : is_pause
 			});
 			document.getElementById("video1").play();
 		}
@@ -88,14 +87,14 @@ MJ.playback.prototype.can_play = function () {
 
 	onActivityLevel(playback_volume * 100);
 
-	if (!this.is_start_playback) {
+	if (!is_start_playback) {
 		var total = (document.getElementById("video1").duration * 1000)
 				.toFixed(0);
 		socket.emit('start_playback', {
 			course_id : global_info.course_id,
 			total : total
 		});
-		this.is_start_playback = true;
+		is_start_playback = true;
 	}
 }
 
@@ -194,4 +193,5 @@ MJ.playback.prototype.init_play_back = function () {
 }
 
 var mj_playback = new MJ.playback();
+
 mj_playback.init_play_back();
