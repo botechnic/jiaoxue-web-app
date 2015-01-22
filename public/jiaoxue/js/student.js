@@ -314,7 +314,7 @@ function flash_ok() {
 
 	} else if (global_info.biz_type === 'playback') {
 
-	}
+	}	
 }
 
 window.onload = function() {
@@ -324,6 +324,14 @@ window.onload = function() {
 	init_vol_bar();
 
 	init_user_num();
+	
+	setTimeout(function(){
+		console.log('settimeout');
+		onresize();
+		document.getElementById('teacher_body').style.visibility = 'visible';
+		document.getElementById('teacher_body').style.zIndex = 0;	
+	}, 1000);
+	
 }
 
 function click_splitter_btn() {
@@ -465,11 +473,6 @@ PDFJS.getDocument(pdf_url).then(function(pdfDoc_) {
 
 	document.getElementById('prev').addEventListener('click', onPrevPage);
 	document.getElementById('next').addEventListener('click', onNextPage);
-
-	onresize();
-
-	document.getElementById('teacher_body').style.visibility = 'visible';
-	document.getElementById('teacher_body').style.zIndex = 0;
 });
 
 // /////////////////////////////////////////////////////////////////////////////
@@ -515,7 +518,6 @@ socket.on('connect', function() {
 
 socket.on('login', function(data) {
 	connected = true;
-
 });
 
 socket.on('user number change', function(data) {

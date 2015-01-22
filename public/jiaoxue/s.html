@@ -12,7 +12,7 @@
         global_info.course_id = 4;
 		global_info.teacher_name = 't1';
         global_info.userid = 't1';
-        global_info.role = 'teacher'; // student:学生, teacher:老师
+        global_info.role = 'student'; // student:学生, teacher:老师
         global_info.biz_type = 'record'; // live:直播, playback:回放, record:录制
         global_info.pdf_addr = 'http://pano.botechnic.com:8989/jiaoxue/asset/android_new1.pdf';
         global_info.live_addr = 'rtmp://119.80.57.9:1935/live';
@@ -30,7 +30,7 @@
     <script type="text/javascript" src="js/srs.utility.js"></script>   
 </head>
 
-<body>
+<body id="teacher_body" style="visibility:hidden;z-index:20001;">
 	<!-- left panel -->
 	<div id="left_panel">
 		<div id="info_container">
