@@ -1,6 +1,7 @@
 # jiaoxue-web-app
 
 jiaoxue web app
+此工程不再维护，jiaoxue-web-app/jiaoxue已经合并到jiaoxue-server-app/public下。
 
 ## How to use
 
